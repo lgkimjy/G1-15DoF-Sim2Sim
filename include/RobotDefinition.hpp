@@ -9,7 +9,7 @@ namespace robot_name
     constexpr size_t nDoFQuat_base = 7;
 
     // Fill these values after cloning this template.
-    constexpr size_t num_act_joint = 0;
+    constexpr size_t num_act_joint = 15;
 
     constexpr size_t nDoF = num_act_joint + nDoF_base;
     constexpr size_t nDoFQuat = num_act_joint + nDoFQuat_base;

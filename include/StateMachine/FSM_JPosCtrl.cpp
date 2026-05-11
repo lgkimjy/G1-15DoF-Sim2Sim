@@ -98,7 +98,7 @@ void FSM_JPosCtrlState<T>::readConfig(std::string config_file)
     YAML::Node yaml_node = YAML::LoadFile(path.c_str());
     try {
         for(int i = 0; i < num_act_joint; i++) {
-            jpos_ref_[i] = yaml_node["target_jpos"][i].as<T>() * M_PI / 180.0;
+            jpos_ref_[i] = yaml_node["target_jpos"][i].as<T>();
             robot_data_->param.Kp[i] = yaml_node["Kp"][i].as<T>();
             robot_data_->param.Kd[i] = yaml_node["Kd"][i].as<T>();
         }

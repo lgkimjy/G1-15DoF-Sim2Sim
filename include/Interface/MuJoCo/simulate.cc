@@ -1325,7 +1325,7 @@ void AlignAndScaleView(mj::Simulate* sim, const mjModel* m) {
   sim->cam.lookat[2] = m->stat.center[2] + 0.7;
   sim->cam.azimuth = 150;
   sim->cam.elevation = -12;
-  sim->cam.distance = m->stat.extent;
+  sim->cam.distance = 2.0 * m->stat.extent;
   sim->cam.type = mjCAMERA_TRACKING;
   sim->cam.trackbodyid = 0;
 }
