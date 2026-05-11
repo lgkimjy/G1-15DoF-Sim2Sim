@@ -99,7 +99,7 @@ void SimulationBridge::UpdateSystemVisualInfo()
 
 void SimulationBridge::LogStates()
 {
-    if (logger && mjData_) {
-        logger->log(mjData_->time, robot_);
-    }
+    // if (logger && mjData_) {
+    //     logger->log(mjData_->time, robot_);
+    // }
 }

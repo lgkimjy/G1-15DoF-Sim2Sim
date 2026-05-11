@@ -1,0 +1,36 @@
+<mujoco model="g1 scene">
+    <include file="g1_15dof_fake_torso.xml"/>
+
+    <option timestep="0.001" gravity="0 0 -9.81" tolerance="1e-08" cone="elliptic" jacobian="dense" solver="Newton" noslip_iterations="10" integrator="Euler" iterations="30" impratio="10.0"/> 
+      <option>
+          <flag override="enable" gravity="enable"/>
+      </option>
+  
+    <visual>
+      <headlight diffuse="0.6 0.6 0.6" ambient="0.1 0.1 0.1" specular="0.9 0.9 0.9"/>
+      <rgba haze="0.15 0.25 0.35 1"/>
+      <global azimuth="140" elevation="-20"/>
+    </visual>
+  
+    <asset>
+        <texture name="texplane" type="2d" builtin="checker" width="512" height="512" mark="edge" rgb1="0.2 0.3 0.4" rgb2="0.1 0.1 0.2" markrgb="1 1 1"/>
+        <texture name="texgeom" type="cube" builtin="flat" width="512" height="512" mark="cross" rgb1="0.8 0.6 0.4" rgb2="0.8 0.6 0.4" markrgb="1 1 1"/>
+        <texture name="sky" type="skybox" builtin="gradient" width="512" height="512" rgb1="1 1 1" rgb2="0.6 0.8 1"/>
+
+        <material name="MatGnd" reflectance="0" specular="1" shininess="1" rgba="0 0.4 0.5 1"/>
+        <material name="MatGeom" texture="texgeom" texuniform="true"/>
+        <material name="MatPlane" texture="texplane" reflectance='0' texrepeat="1 1" texuniform="true"/>
+
+		<!-- <hfield name='hf2' file="noise.png" size="15 15 0.05 0.01"/> -->
+    </asset>
+
+    <worldbody>
+      <!-- <light pos="0 0 1.5" dir="0 0 -1" directional="true"/> -->
+      <light directional="true" pos=" 5 -5 5" dir="-0.5  0.5 -1" diffuse="0.3 0.3 0.3" specular="0.0 0.0 0.0" castshadow="false"/>
+      <light directional="true" pos=" 5  5 5" dir="-0.5 -0.5 -1" diffuse="0.3 0.3 0.3" specular="0.0 0.0 0.0" castshadow="false"/>
+      <light directional="true" pos="-5  5 5" dir=" 0.5 -0.5 -1" diffuse="0.3 0.3 0.3" specular="0.0 0.0 0.0" castshadow="false"/>
+      <light directional="true" pos="-5 -5 5" dir=" 0.5  0.5 -1" diffuse="0.3 0.3 0.3" specular="0.0 0.0 0.0" castshadow="false"/>
+      
+      <geom name="Ground" type="plane" pos="0 0 0" material="MatPlane" size="0 0 1" friction="1 .1 .1" condim="6" conaffinity="3" contype="3" group="2"/>
+    </worldbody>
+  </mujoco>

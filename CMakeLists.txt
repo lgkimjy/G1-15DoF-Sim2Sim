@@ -31,6 +31,9 @@ find_package(HDF5 REQUIRED COMPONENTS C HL CXX)
 find_package(yaml-cpp CONFIG REQUIRED)
 include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/AddInterfaceSimulate.cmake")
 
+include(cmake/OnnxRuntime.cmake)
+
+
 file(GLOB FSM_SOURCES CONFIGURE_DEPENDS
   "${CMAKE_CURRENT_SOURCE_DIR}/include/StateMachine/FSM_*.cpp"
 )
@@ -40,6 +43,7 @@ add_executable(mujoco_template
   src/MJSimulationBridge.cpp
   include/StateMachine/StateMachineCtrl.cpp
   include/Interface/MuJoCo/SimulationInterface.cpp
+  include/Controller/OnnxParser/OnnxPolicy.cpp
   ${FSM_SOURCES}
 )
 
@@ -54,6 +58,7 @@ target_link_libraries(mujoco_template PRIVATE
   Eigen3::Eigen
   yaml-cpp::yaml-cpp
   mujoco_template_simulate
+  onnxruntime::onnxruntime 
   mujoco::mujoco
   glfw
   Threads::Threads
