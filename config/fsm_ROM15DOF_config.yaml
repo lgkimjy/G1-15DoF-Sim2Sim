@@ -1,2 +1,28 @@
-notes:
-  description: "Fill in task-specific gains, commands, and policy settings here."
+policy:
+  path: "../onnx/2026-04-10_00-36-11_rsl_rl/exported/policy.onnx"
+  input_name: "obs"
+  output_name: "actions"
+  action_scale: 0.25
+  action_clip: 1000
+  obs_base_ang_vel_scale: 0.2
+  obs_joint_vel_scale: 0.05
+  policy_decimation: 20
+  history_length: 5
+  policy_to_robot: []
+
+Kp: [ 
+  100, 100, 100, 200, 20, 20, # roll, pitch, yaw, knee, ankle pitch, roll
+  100, 100, 100, 200, 20, 20,
+  5000, 5000, 5000,
+]
+Kd: [ 
+  2.5, 2.5, 2.5, 5, 0.2, 0.1, 
+  2.5, 2.5, 2.5, 5, 0.2, 0.1,
+  5, 5, 5,
+]
+
+default_jpos : [
+  -0.1, 0.0, 0.0, 0.3, -0.2, 0.0, # left leg
+  -0.1, 0.0, 0.0, 0.3, -0.2, 0.0, # right leg
+  0.0, 0.0, 0.0                   # waist joint = orientation of torso
+]

@@ -29,11 +29,11 @@ struct RobotFeedback {
     Eigen::VectorXd     jpos;
     Eigen::VectorXd     jvel;
 
-    explicit RobotFeedback(int nv = robot_name::nDoF)
+    explicit RobotFeedback(int nv = g1::nDoF)
         : qpos(Eigen::VectorXd::Zero(nv + 1)),
           qvel(Eigen::VectorXd::Zero(nv)),
-          jpos(Eigen::VectorXd::Zero(robot_name::num_act_joint)),
-          jvel(Eigen::VectorXd::Zero(robot_name::num_act_joint)) {}
+          jpos(Eigen::VectorXd::Zero(g1::num_act_joint)),
+          jvel(Eigen::VectorXd::Zero(g1::num_act_joint)) {}
 };
 
 // --- Commands & actuator outputs: motion targets + torque (not "motor struct" only) ---
@@ -45,10 +45,10 @@ struct RobotCtrl {
     Eigen::VectorXd jvel_d;
     Eigen::VectorXd torq_d;
 
-    explicit RobotCtrl(int = robot_name::nDoF)
-        : jpos_d(Eigen::VectorXd::Zero(robot_name::num_act_joint)),
-          jvel_d(Eigen::VectorXd::Zero(robot_name::num_act_joint)),
-          torq_d(Eigen::VectorXd::Zero(robot_name::num_act_joint)) {}
+    explicit RobotCtrl(int = g1::nDoF)
+        : jpos_d(Eigen::VectorXd::Zero(g1::num_act_joint)),
+          jvel_d(Eigen::VectorXd::Zero(g1::num_act_joint)),
+          torq_d(Eigen::VectorXd::Zero(g1::num_act_joint)) {}
 };
 
 // --- Parameters from config (PD, nominal posture); joint order = RobotDefinition::kJointNames / joint_names ---
@@ -56,18 +56,32 @@ struct RobotParam {
     Eigen::VectorXd Kp;
     Eigen::VectorXd Kd;
 
-    explicit RobotParam(int = robot_name::nDoF)
-        : Kp(Eigen::VectorXd::Zero(robot_name::num_act_joint)),
-          Kd(Eigen::VectorXd::Zero(robot_name::num_act_joint)) {}
+    explicit RobotParam(int = g1::nDoF)
+        : Kp(Eigen::VectorXd::Zero(g1::num_act_joint)),
+          Kd(Eigen::VectorXd::Zero(g1::num_act_joint)) {}
+};
+
+struct PolicyConfig {
+    std::string onnx_path;
+    std::string input_name = "obs";
+    std::string output_name = "actions";
+    double action_scale = 0.25;
+    double action_clip = 1.0;
+    double obs_base_ang_vel_scale = 0.2;
+    double obs_joint_vel_scale = 0.05;
+    int policy_decimation = 1;
+    int history_length = 1;
+    std::vector<int> policy_to_robot;
 };
 
 struct RobotData {
     RobotFeedback fbk;
     RobotCtrl ctrl;
     RobotParam param;
+    PolicyConfig policy;
     
     // n_q : number of generalized coordinates)
     // n_v : number of generalized velocities
     // n_j : number of joints
-    explicit RobotData(int nv = robot_name::nDoF) : fbk(nv), ctrl(nv), param(nv) {}
+    explicit RobotData(int nv = g1::nDoF) : fbk(nv), ctrl(nv), param(nv) {}
 };

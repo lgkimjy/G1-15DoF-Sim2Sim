@@ -3,7 +3,7 @@
 #include <array>
 #include <string_view>
 
-namespace robot_name
+namespace g1
 {
     constexpr size_t nDoF_base = 6;
     constexpr size_t nDoFQuat_base = 7;

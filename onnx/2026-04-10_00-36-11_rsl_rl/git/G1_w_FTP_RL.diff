@@ -1,0 +1,341 @@
+--- git commit ---
+e2f21037860a82563de36b68ab0cba8176b78586
+
+
+--- git status ---
+On branch master
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   docs/tex/compare2/compare2.pdf
+	modified:   docs/tex/compare2/compare2.tex
+	modified:   source/G1_w_FTP_RL/G1_w_FTP_RL/assets/robots/g1/__init__.py
+	modified:   source/G1_w_FTP_RL/G1_w_FTP_RL/assets/robots/g1/g1_asset_cfg.py
+	modified:   source/G1_w_FTP_RL/G1_w_FTP_RL/tasks/manager_based/g1_w_ftp_rl/__init__.py
+	modified:   source/G1_w_FTP_RL/G1_w_FTP_RL/tasks/manager_based/g1_w_ftp_rl/agents/rsl_rl_ppo_cfg.py
+	modified:   source/G1_w_FTP_RL/G1_w_FTP_RL/tasks/manager_based/g1_w_ftp_rl/g1_18dof_upper_srb_env_cfg.py
+	modified:   source/G1_w_FTP_RL/G1_w_FTP_RL/tasks/manager_based/g1_w_ftp_rl/g1_w_ftp_rl_env_cfg.py
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	scripts/setup_mujoco_simulate_plugins.sh
+	source/G1_w_FTP_RL/G1_w_FTP_RL/tasks/manager_based/g1_w_ftp_rl/g1_15dof_rot_torso_env_cfg.py
+
+no changes added to commit (use "git add" and/or "git commit -a") 
+
+
+--- git diff ---
+diff --git a/docs/tex/compare2/compare2.pdf b/docs/tex/compare2/compare2.pdf
+index 73c7636..411775c 100644
+Binary files a/docs/tex/compare2/compare2.pdf and b/docs/tex/compare2/compare2.pdf differ
+diff --git a/docs/tex/compare2/compare2.tex b/docs/tex/compare2/compare2.tex
+index d7ff69c..e5082ca 100644
+--- a/docs/tex/compare2/compare2.tex
++++ b/docs/tex/compare2/compare2.tex
+@@ -189,8 +189,10 @@ $r_{\Delta a}$ & $-0.05$ & $-0.05$ & used identically \\
+ $r_{\mathrm{joint\_limit}}$ & $-5.0$ & $-5.0$ & used identically \\
+ $r_{\mathrm{energy}}$ & $-2 \times 10^{-5}$ & $-2 \times 10^{-5}$ & used identically \\
+ $r_{\mathrm{arm\_dev}}$ & $-0.1$ & -- & omitted because the reduced model has no arm-wrist chain \\
+-$r_{\mathrm{waist\_dev}}$ & $-1.0$ & -- & omitted because the reduced model has no Unitree waist joint set \\
++$r_{\mathrm{waist\_dev}}$ & $-1.0$ & -- & the exact Unitree waist joint set does not exist in the reduced model \\
+ $r_{\mathrm{leg\_dev}}$ & $-1.0$ & $-1.0$ & used identically \\
++$r_{\mathrm{torso\_rot\_dev}}$ & -- & $-1.0$ & newly added reduced-model analogue on $(roll,pitch,yaw)$ \\
++$r_{\mathrm{torso\_trans\_dev}}$ & -- & $-1.0$ & newly added reduced-model analogue on $(t_x,t_y,t_z)$ \\
+ $r_{\mathrm{flat}}$ & $-5.0$ & $-5.0$ & used identically \\
+ $r_{\mathrm{height}}$ & $-10.0$ & $-10.0$ & used identically \\
+ $r_{\mathrm{gait}}$ & $+0.5$ & $+0.5$ & used identically \\
+@@ -246,14 +248,30 @@ Waist deviation & no waist yaw/roll/pitch joint triplet exists; the reduced tors
+ \end{tabularx}
+ \end{table}
+ 
+-The remaining posture regularization in \SRB{} is only
++The reduced model now uses the following extra posture regularizers:
++\begin{align}
++r_{\mathrm{torso\_rot\_dev}}
++&=
++\sum_{j \in \mathcal{J}_{torso\_rot}}
++|q_j-q^{default}_j|,\\
++r_{\mathrm{torso\_trans\_dev}}
++&=
++\sum_{j \in \mathcal{J}_{torso\_trans}}
++|q_j-q^{default}_j|,
++\end{align}
++where
++\begin{equation}
++\mathcal{J}_{torso\_rot} = \{roll, pitch, yaw\},
++\qquad
++\mathcal{J}_{torso\_trans} = \{t_x, t_y, t_z\}.
++\end{equation}
++The leg regularizer remains
+ \begin{equation}
+ r_{\mathrm{leg\_dev}}
+ =
+ \sum_{j \in \mathcal{J}_{hip\_roll,hip\_yaw}}
+-|q_j-q^{default}_j|,
++|q_j-q^{default}_j|.
+ \end{equation}
+-which is exactly the leg-deviation term already present in \UT{}.
+ 
+ \subsection{Implication}
+ The reward logic is therefore best summarized as
+@@ -262,7 +280,9 @@ r_{\mathrm{SRB}}
+ \approx
+ r_{\mathrm{UT}}
+ - r_{\mathrm{arm\_dev}}
+-- r_{\mathrm{waist\_dev}},
++- r_{\mathrm{waist\_dev}}
+++ r_{\mathrm{torso\_rot\_dev}}
+++ r_{\mathrm{torso\_trans\_dev}},
+ \end{equation}
+ with the caveat that the shared terms are still evaluated on a different robot model. This is the strongest concise
+ description of the current design.
+diff --git a/source/G1_w_FTP_RL/G1_w_FTP_RL/assets/robots/g1/__init__.py b/source/G1_w_FTP_RL/G1_w_FTP_RL/assets/robots/g1/__init__.py
+index 53b765e..42e3835 100644
+--- a/source/G1_w_FTP_RL/G1_w_FTP_RL/assets/robots/g1/__init__.py
++++ b/source/G1_w_FTP_RL/G1_w_FTP_RL/assets/robots/g1/__init__.py
+@@ -1,5 +1,5 @@
+ """G1 robot assets shipped with the project."""
+ 
+-from .g1_asset_cfg import G1_15DOF_CFG, G1_18DOF_UPPER_SRB_CFG, G1_29DOF_FTP_CFG
++from .g1_asset_cfg import G1_15DOF_CFG, G1_18DOF_UPPER_SRB_CFG, G1_29DOF_FTP_CFG, G1_29DOF_FTP_UNITREE_CFG
+ 
+-__all__ = ["G1_15DOF_CFG", "G1_18DOF_UPPER_SRB_CFG", "G1_29DOF_FTP_CFG"]
++__all__ = ["G1_15DOF_CFG", "G1_18DOF_UPPER_SRB_CFG", "G1_29DOF_FTP_CFG", "G1_29DOF_FTP_UNITREE_CFG"]
+diff --git a/source/G1_w_FTP_RL/G1_w_FTP_RL/assets/robots/g1/g1_asset_cfg.py b/source/G1_w_FTP_RL/G1_w_FTP_RL/assets/robots/g1/g1_asset_cfg.py
+index f231893..19ab30d 100644
+--- a/source/G1_w_FTP_RL/G1_w_FTP_RL/assets/robots/g1/g1_asset_cfg.py
++++ b/source/G1_w_FTP_RL/G1_w_FTP_RL/assets/robots/g1/g1_asset_cfg.py
+@@ -271,3 +271,116 @@ G1_29DOF_FTP_CFG = ArticulationCfg(
+     },
+     prim_path="/World/envs/env_.*/Robot",
+ )
++
++G1_29DOF_FTP_UNITREE_CFG = ArticulationCfg(
++    spawn=sim_utils.UrdfFileCfg(
++        asset_path=str(_ASSET_DIR / "g1_29dof_rev_1_0_with_inspire_hand_FTP.urdf"),
++        fix_base=False,
++        merge_fixed_joints=False,
++        make_instanceable=True,
++        joint_drive=_JOINT_DRIVE,
++        collision_from_visuals=False,
++        self_collision=False,
++        replace_cylinders_with_capsules=False,
++        activate_contact_sensors=True,
++        rigid_props=_RIGID_PROPS,
++        articulation_props=_ARTICULATION_PROPS,
++    ),
++    init_state=ArticulationCfg.InitialStateCfg(
++        pos=(0.0, 0.0, 0.80),
++        joint_pos={
++            "left_hip_pitch_joint": -0.1,
++            "right_hip_pitch_joint": -0.1,
++            ".*_knee_joint": 0.3,
++            ".*_ankle_pitch_joint": -0.2,
++            ".*_shoulder_pitch_joint": 0.3,
++            "left_shoulder_roll_joint": 0.25,
++            "right_shoulder_roll_joint": -0.25,
++            ".*_elbow_joint": 0.97,
++            "left_wrist_roll_joint": 0.15,
++            "right_wrist_roll_joint": -0.15,
++            "waist_.*_joint": 0.0,
++            ".*_thumb_.*": 0.0,
++            ".*_index_.*": 0.0,
++            ".*_middle_.*": 0.0,
++            ".*_ring_.*": 0.0,
++            ".*_little_.*": 0.0,
++        },
++        joint_vel={".*": 0.0},
++    ),
++    soft_joint_pos_limit_factor=0.9,
++    actuators={
++        "n7520_14": ImplicitActuatorCfg(
++            joint_names_expr=[".*_hip_pitch_.*", ".*_hip_yaw_.*", "waist_yaw_joint"],
++            effort_limit_sim=88.0,
++            velocity_limit_sim=32.0,
++            stiffness={
++                ".*_hip_.*": 100.0,
++                "waist_yaw_joint": 200.0,
++            },
++            damping={
++                ".*_hip_.*": 2.0,
++                "waist_yaw_joint": 5.0,
++            },
++            armature=0.01,
++        ),
++        "n7520_22": ImplicitActuatorCfg(
++            joint_names_expr=[".*_hip_roll_.*", ".*_knee_.*"],
++            effort_limit_sim=139.0,
++            velocity_limit_sim=20.0,
++            stiffness={
++                ".*_hip_roll_.*": 100.0,
++                ".*_knee_.*": 150.0,
++            },
++            damping={
++                ".*_hip_roll_.*": 2.0,
++                ".*_knee_.*": 4.0,
++            },
++            armature=0.01,
++        ),
++        "n5020_16": ImplicitActuatorCfg(
++            joint_names_expr=[
++                ".*_shoulder_.*",
++                ".*_elbow_.*",
++                ".*_wrist_roll.*",
++                ".*_ankle_.*",
++                "waist_roll_joint",
++                "waist_pitch_joint",
++            ],
++            effort_limit_sim=25.0,
++            velocity_limit_sim=37.0,
++            stiffness=40.0,
++            damping={
++                ".*_shoulder_.*": 1.0,
++                ".*_elbow_.*": 1.0,
++                ".*_wrist_roll.*": 1.0,
++                ".*_ankle_.*": 2.0,
++                "waist_.*_joint": 5.0,
++            },
++            armature=0.01,
++        ),
++        "w4010_25": ImplicitActuatorCfg(
++            joint_names_expr=[".*_wrist_pitch.*", ".*_wrist_yaw.*"],
++            effort_limit_sim=5.0,
++            velocity_limit_sim=22.0,
++            stiffness=40.0,
++            damping=1.0,
++            armature=0.01,
++        ),
++        "hands": ImplicitActuatorCfg(
++            joint_names_expr=[
++                ".*_index_.*",
++                ".*_middle_.*",
++                ".*_thumb_.*",
++                ".*_ring_.*",
++                ".*_little_.*",
++            ],
++            effort_limit_sim=30.0,
++            velocity_limit_sim=10.0,
++            stiffness=10.0,
++            damping=0.2,
++            armature=0.001,
++        ),
++    },
++    prim_path="/World/envs/env_.*/Robot",
++)
+diff --git a/source/G1_w_FTP_RL/G1_w_FTP_RL/tasks/manager_based/g1_w_ftp_rl/__init__.py b/source/G1_w_FTP_RL/G1_w_FTP_RL/tasks/manager_based/g1_w_ftp_rl/__init__.py
+index 36a4338..54186cb 100644
+--- a/source/G1_w_FTP_RL/G1_w_FTP_RL/tasks/manager_based/g1_w_ftp_rl/__init__.py
++++ b/source/G1_w_FTP_RL/G1_w_FTP_RL/tasks/manager_based/g1_w_ftp_rl/__init__.py
+@@ -13,22 +13,22 @@ from . import agents
+ 
+ 
+ gym.register(
+-    id="Isaac-G1-15DOF-Flat-v0",
++    id="Isaac-G1-15DOF-RotTorso-Flat-v0",
+     entry_point="isaaclab.envs:ManagerBasedRLEnv",
+     disable_env_checker=True,
+     kwargs={
+-        "env_cfg_entry_point": f"{__name__}.g1_w_ftp_rl_env_cfg:G1_15DofFlatEnvCfg",
++        "env_cfg_entry_point": f"{__name__}.g1_15dof_rot_torso_env_cfg:G1_15DofRotTorsoFlatEnvCfg",
+         "rsl_rl_cfg_entry_point": f"{agents.__name__}.rsl_rl_ppo_cfg:G1_15DofPPORunnerCfg",
+     },
+ )
+ 
+ 
+ gym.register(
+-    id="Isaac-G1-15DOF-Flat-Play-v0",
++    id="Isaac-G1-15DOF-RotTorso-Flat-Play-v0",
+     entry_point="isaaclab.envs:ManagerBasedRLEnv",
+     disable_env_checker=True,
+     kwargs={
+-        "env_cfg_entry_point": f"{__name__}.g1_w_ftp_rl_env_cfg:G1_15DofFlatEnvCfg_PLAY",
++        "env_cfg_entry_point": f"{__name__}.g1_15dof_rot_torso_env_cfg:G1_15DofRotTorsoFlatEnvCfg_PLAY",
+         "rsl_rl_cfg_entry_point": f"{agents.__name__}.rsl_rl_ppo_cfg:G1_15DofPPORunnerCfg",
+     },
+ )
+diff --git a/source/G1_w_FTP_RL/G1_w_FTP_RL/tasks/manager_based/g1_w_ftp_rl/agents/rsl_rl_ppo_cfg.py b/source/G1_w_FTP_RL/G1_w_FTP_RL/tasks/manager_based/g1_w_ftp_rl/agents/rsl_rl_ppo_cfg.py
+index af22e25..560022b 100644
+--- a/source/G1_w_FTP_RL/G1_w_FTP_RL/tasks/manager_based/g1_w_ftp_rl/agents/rsl_rl_ppo_cfg.py
++++ b/source/G1_w_FTP_RL/G1_w_FTP_RL/tasks/manager_based/g1_w_ftp_rl/agents/rsl_rl_ppo_cfg.py
+@@ -13,7 +13,7 @@ class G1_15DofPPORunnerCfg(RslRlOnPolicyRunnerCfg):
+     """PPO defaults for the project-local G1 15-DoF flat locomotion task."""
+ 
+     num_steps_per_env = 24
+-    max_iterations = 5000
++    max_iterations = 30000
+     save_interval = 50
+     experiment_name = "g1_15dof_flat"
+     run_name = "rsl_rl"
+@@ -21,8 +21,8 @@ class G1_15DofPPORunnerCfg(RslRlOnPolicyRunnerCfg):
+         init_noise_std=1.0,
+         actor_obs_normalization=False,
+         critic_obs_normalization=False,
+-        actor_hidden_dims=[256, 128, 128],
+-        critic_hidden_dims=[256, 128, 128],
++        actor_hidden_dims=[512, 256, 128],
++        critic_hidden_dims=[512, 256, 128],
+         activation="elu",
+     )
+     algorithm = RslRlPpoAlgorithmCfg(
+@@ -96,7 +96,7 @@ class G1_18DofUpperSrbPPORunnerCfg(RslRlOnPolicyRunnerCfg):
+         value_loss_coef=1.0,
+         use_clipped_value_loss=True,
+         clip_param=0.2,
+-        entropy_coef=0.01,
++        entropy_coef=0.008,
+         num_learning_epochs=5,
+         num_mini_batches=4,
+         learning_rate=1.0e-3,
+diff --git a/source/G1_w_FTP_RL/G1_w_FTP_RL/tasks/manager_based/g1_w_ftp_rl/g1_18dof_upper_srb_env_cfg.py b/source/G1_w_FTP_RL/G1_w_FTP_RL/tasks/manager_based/g1_w_ftp_rl/g1_18dof_upper_srb_env_cfg.py
+index 16c7f50..c1a971a 100644
+--- a/source/G1_w_FTP_RL/G1_w_FTP_RL/tasks/manager_based/g1_w_ftp_rl/g1_18dof_upper_srb_env_cfg.py
++++ b/source/G1_w_FTP_RL/G1_w_FTP_RL/tasks/manager_based/g1_w_ftp_rl/g1_18dof_upper_srb_env_cfg.py
+@@ -254,6 +254,26 @@ class RewardsCfg:
+         weight=-1.0,
+         params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*_hip_roll_joint", ".*_hip_yaw_joint"])},
+     )
++    # joint_deviation_torso_rot = RewTerm(
++    #     func=mdp.joint_deviation_l1,
++    #     weight=-0.01,
++    #     params={
++    #         "asset_cfg": SceneEntityCfg(
++    #             "robot",
++    #             joint_names=["torso_roll_joint", "torso_pitch_joint", "torso_yaw_joint"],
++    #         )
++    #     },
++    # )
++    joint_deviation_torso_trans = RewTerm(
++        func=mdp.joint_deviation_l1,
++        weight=-2.0,
++        params={
++            "asset_cfg": SceneEntityCfg(
++                "robot",
++                joint_names=["torso_tx_joint", "torso_ty_joint", "torso_tz_joint"],
++            )
++        },
++    )
+ 
+     flat_orientation_l2 = RewTerm(func=mdp.flat_orientation_l2, weight=-5.0)
+     base_height = RewTerm(func=mdp.base_height_l2, weight=-10.0, params={"target_height": 0.78})
+diff --git a/source/G1_w_FTP_RL/G1_w_FTP_RL/tasks/manager_based/g1_w_ftp_rl/g1_w_ftp_rl_env_cfg.py b/source/G1_w_FTP_RL/G1_w_FTP_RL/tasks/manager_based/g1_w_ftp_rl/g1_w_ftp_rl_env_cfg.py
+index 753420a..f2420d6 100644
+--- a/source/G1_w_FTP_RL/G1_w_FTP_RL/tasks/manager_based/g1_w_ftp_rl/g1_w_ftp_rl_env_cfg.py
++++ b/source/G1_w_FTP_RL/G1_w_FTP_RL/tasks/manager_based/g1_w_ftp_rl/g1_w_ftp_rl_env_cfg.py
+@@ -17,7 +17,7 @@ from isaaclab_tasks.manager_based.locomotion.velocity.config.g1.flat_env_cfg imp
+     G1FlatEnvCfg_PLAY as IsaacLabG1FlatEnvCfgPlay,
+ )
+ 
+-from G1_w_FTP_RL.assets.robots.g1 import G1_15DOF_CFG, G1_29DOF_FTP_CFG
++from G1_w_FTP_RL.assets.robots.g1 import G1_15DOF_CFG, G1_29DOF_FTP_UNITREE_CFG
+ 
+ 
+ @configclass
+@@ -103,7 +103,7 @@ class G1_29DofFlatEnvCfg(IsaacLabG1FlatEnvCfg):
+ 
+     def __post_init__(self) -> None:
+         super().__post_init__()
+-        self.scene.robot = G1_29DOF_FTP_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
++        self.scene.robot = G1_29DOF_FTP_UNITREE_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
+         self.scene.num_envs = 1024
+         self.scene.env_spacing = 2.5
+         self.episode_length_s = 20.0
