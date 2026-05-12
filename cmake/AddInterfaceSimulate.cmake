@@ -18,7 +18,25 @@ target_link_libraries(mujoco_template_simulate PRIVATE
 )
 
 if(APPLE)
-  enable_language(OBJCXX)
+  enable_language(OBJC OBJCXX)
+
+  # GLFW's Cocoa backend is Objective-C. If CMake resolves these .m files as
+  # Objective-C++, Clang rejects C-style CoreFoundation pointer conversions.
+  if(TARGET glfw)
+    if(CMAKE_VERSION VERSION_LESS "3.18")
+      message(FATAL_ERROR "CMake 3.18 or newer is required to force GLFW Cocoa sources to Objective-C.")
+    endif()
+
+    set_source_files_properties(
+      cocoa_init.m
+      cocoa_joystick.m
+      cocoa_monitor.m
+      cocoa_window.m
+      nsgl_context.m
+      TARGET_DIRECTORY glfw
+      PROPERTIES LANGUAGE OBJC)
+  endif()
+
   target_sources(mujoco_template_simulate PRIVATE
     "${TEMPLATE_MUJOCO_SOURCE_DIR}/simulate/macos_gui.mm")
   target_link_libraries(mujoco_template_simulate PRIVATE "-framework Cocoa")
