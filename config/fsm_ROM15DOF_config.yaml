@@ -3,12 +3,12 @@ policy:
   input_name: "obs"
   output_name: "actions"
   action_scale: 0.25
-  action_clip: 1000
+  action_clip: 1000.0
   obs_base_ang_vel_scale: 0.2
   obs_joint_vel_scale: 0.05
   policy_decimation: 20
   history_length: 5
-  policy_to_robot: []
+  policy_to_robot: [0, 6, 12, 1, 7, 13, 2, 8, 14, 3, 9, 4, 10, 5, 11]
 
 Kp: [ 
   100, 100, 100, 200, 20, 20, # roll, pitch, yaw, knee, ankle pitch, roll
@@ -19,6 +19,12 @@ Kd: [
   2.5, 2.5, 2.5, 5, 0.2, 0.1, 
   2.5, 2.5, 2.5, 5, 0.2, 0.1,
   5, 5, 5,
+]
+
+tau_limit: [
+  88, 139, 88, 139, 50, 50,
+  88, 139, 88, 139, 50, 50,
+  88, 88, 88,
 ]
 
 default_jpos : [

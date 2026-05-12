@@ -112,6 +112,29 @@ public:
         setMarker(name, marker);
     }
 
+    void arrow(const std::string& name,
+               const Eigen::Vector3d& from,
+               const Eigen::Vector3d& to,
+               double shaft_radius,
+               const Color& color)
+    {
+        Marker marker;
+        marker.kind = MarkerKind::Arrow;
+        marker.points = {from, to};
+        marker.size = shaft_radius;
+        marker.color = color;
+        setMarker(name, marker);
+    }
+
+    void arrowVector(const std::string& name,
+                     const Eigen::Vector3d& from,
+                     const Eigen::Vector3d& vec,
+                     double shaft_radius,
+                     const Color& color)
+    {
+        arrow(name, from, from + vec, shaft_radius, color);
+    }
+
     void traj(const std::string& name,
               const std::vector<Eigen::Vector3d>& points,
               double width,
@@ -220,6 +243,9 @@ public:
             case MarkerKind::Line:
                 drawLine(marker, scn);
                 break;
+            case MarkerKind::Arrow:
+                drawArrow(marker, scn);
+                break;
             case MarkerKind::Trajectory:
                 drawTrajectory(marker, scn);
                 break;
@@ -237,6 +263,7 @@ private:
         Label,
         Frame,
         Line,
+        Arrow,
         Trajectory,
         TrajectoryWithFrames
     };
@@ -400,6 +427,24 @@ private:
         mjvGeom* geom = scn.geoms + scn.ngeom++;
         mjv_initGeom(geom, mjGEOM_SPHERE, nullptr, nullptr, nullptr, color);
         mjv_connector(geom, mjGEOM_LINE, marker.size, from, to);
+    }
+
+    void drawArrow(const Marker& marker, mjvScene& scn)
+    {
+        if (marker.points.size() < 2 || !canAddGeom(scn)) return;
+        if ((marker.points[1] - marker.points[0]).squaredNorm() < 1.0e-12) return;
+
+        mjtNum from[3];
+        mjtNum to[3];
+        float color[4];
+        copyPos(from, marker.points[0]);
+        copyPos(to, marker.points[1]);
+        copyColor(color, marker.color);
+
+        mjvGeom* geom = scn.geoms + scn.ngeom++;
+        mjv_initGeom(geom, mjGEOM_ARROW, nullptr, nullptr, nullptr, color);
+        mjv_connector(geom, mjGEOM_ARROW, marker.size, from, to);
+        copyColor(geom->rgba, marker.color);
     }
 
     void drawTrajectory(const Marker& marker, mjvScene& scn)

@@ -38,12 +38,20 @@ private:
     int policy_obs_dim_ = 0;
     std::vector<int> policy_to_robot_;
 
+    Eigen::VectorXd raw_action_;
+    Eigen::VectorXd clipped_action_;
+    Eigen::VectorXd last_good_raw_action_;
+    Eigen::VectorXd frame_obs_;
+    Eigen::VectorXd obs_;
+    std::deque<Eigen::VectorXd> obs_history_;
+
     Eigen::Matrix<T, num_act_joint, 1>      default_jpos_;
 
     Eigen::VectorXd makeObservation() const;
     void updateObservation();
     void updateAction();
     void applyPolicyAction(const Eigen::VectorXd& action);
+    std::string resolvePolicyPath(const std::string& raw_path, const std::string& config_file) const;
 
     void updateModel();
     void updateCommand();

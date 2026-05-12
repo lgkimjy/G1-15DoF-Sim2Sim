@@ -39,7 +39,7 @@ void StateMachineCtrl::runState()
         first_run_ = false;
     }
 
-    if(cnt > 2000 & cnt <= 2001) {
+    if (cnt == 1001) {
         current_state_ = state_list_[StateList::FSM_ROM15DOF];
         current_state_->onEnter();
     }

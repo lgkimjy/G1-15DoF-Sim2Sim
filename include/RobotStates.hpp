@@ -55,10 +55,12 @@ struct RobotCtrl {
 struct RobotParam {
     Eigen::VectorXd Kp;
     Eigen::VectorXd Kd;
+    Eigen::VectorXd tau_limit;
 
     explicit RobotParam(int = g1::nDoF)
         : Kp(Eigen::VectorXd::Zero(g1::num_act_joint)),
-          Kd(Eigen::VectorXd::Zero(g1::num_act_joint)) {}
+          Kd(Eigen::VectorXd::Zero(g1::num_act_joint)),
+          tau_limit(Eigen::VectorXd::Constant(g1::num_act_joint, 1.0e9)) {}
 };
 
 struct PolicyConfig {

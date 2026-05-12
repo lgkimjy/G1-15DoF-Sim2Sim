@@ -81,12 +81,22 @@ void SimulationBridge::UpdateSystemObserver()
 
 void SimulationBridge::UpdateUserInput()
 {
+    robot_.ctrl.lin_vel_d.x() = mjSim_->lin_vel_d.x();
+    robot_.ctrl.lin_vel_d.y() = mjSim_->lin_vel_d.y();
+    robot_.ctrl.lin_vel_d.z() = 0.0;
+    robot_.ctrl.ang_vel_d.x() = 0.0;
+    robot_.ctrl.ang_vel_d.y() = 0.0;
+    robot_.ctrl.ang_vel_d.z() = mjSim_->ang_vel_d.z();
 }
 
 void SimulationBridge::UpdateControlCommand()
 {
     state_machine_.runState();
 
+    // for (int i = 0; i < num_act_joint; ++i) {
+    //     const double tau_limit = std::max(0.0, robot_.param.tau_limit(i));
+    //     mjData_->ctrl[i] = std::clamp(robot_.ctrl.torq_d(i), -tau_limit, tau_limit);
+    // }
     for (int i = 0; i < num_act_joint; ++i) {
         mjData_->ctrl[i] = robot_.ctrl.torq_d(i);
     }
