@@ -1,0 +1,160 @@
+--- git commit ---
+8c7cb5b0cc9f7450a692a699b717508493a0b839
+
+
+--- git status ---
+On branch master
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   source/G1_w_FTP_RL/G1_w_FTP_RL/tasks/manager_based/g1_w_ftp_rl/g1_15dof_rot_torso_env_cfg.py
+	modified:   source/G1_w_FTP_RL/G1_w_FTP_RL/tasks/manager_based/g1_w_ftp_rl/g1_18dof_upper_srb_env_cfg.py
+	modified:   source/G1_w_FTP_RL/G1_w_FTP_RL/tasks/manager_based/g1_w_ftp_rl/mdp/rewards.py
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	scripts/rsl_rl/eval_fixed_command.py
+
+no changes added to commit (use "git add" and/or "git commit -a") 
+
+
+--- git diff ---
+diff --git a/source/G1_w_FTP_RL/G1_w_FTP_RL/tasks/manager_based/g1_w_ftp_rl/g1_15dof_rot_torso_env_cfg.py b/source/G1_w_FTP_RL/G1_w_FTP_RL/tasks/manager_based/g1_w_ftp_rl/g1_15dof_rot_torso_env_cfg.py
+index 19b6100..0a7a8b4 100644
+--- a/source/G1_w_FTP_RL/G1_w_FTP_RL/tasks/manager_based/g1_w_ftp_rl/g1_15dof_rot_torso_env_cfg.py
++++ b/source/G1_w_FTP_RL/G1_w_FTP_RL/tasks/manager_based/g1_w_ftp_rl/g1_15dof_rot_torso_env_cfg.py
+@@ -256,7 +256,7 @@ class RewardsCfg:
+     )
+     waist_deviation = RewTerm(
+         func=mdp.joint_deviation_l1,
+-        weight=-0.01,
++        weight=-0.1,
+         params={
+             "asset_cfg": SceneEntityCfg(
+                 "robot",
+@@ -264,6 +264,11 @@ class RewardsCfg:
+             )
+         },
+     )
++    torso_orientation_deviation = RewTerm(
++        func=mdp.body_upright_orientation_l2,
++        weight=-2.0,
++        params={"asset_cfg": SceneEntityCfg("robot", body_names="torso_link")},
++    )
+ 
+     flat_orientation_l2 = RewTerm(func=mdp.flat_orientation_l2, weight=-5.0)
+     base_height = RewTerm(func=mdp.base_height_l2, weight=-10.0, params={"target_height": 0.78})
+diff --git a/source/G1_w_FTP_RL/G1_w_FTP_RL/tasks/manager_based/g1_w_ftp_rl/g1_18dof_upper_srb_env_cfg.py b/source/G1_w_FTP_RL/G1_w_FTP_RL/tasks/manager_based/g1_w_ftp_rl/g1_18dof_upper_srb_env_cfg.py
+index b82759b..523902f 100644
+--- a/source/G1_w_FTP_RL/G1_w_FTP_RL/tasks/manager_based/g1_w_ftp_rl/g1_18dof_upper_srb_env_cfg.py
++++ b/source/G1_w_FTP_RL/G1_w_FTP_RL/tasks/manager_based/g1_w_ftp_rl/g1_18dof_upper_srb_env_cfg.py
+@@ -158,7 +158,7 @@ class CommandsCfg:
+     base_velocity = mdp.UniformLevelVelocityCommandCfg(
+         asset_name="robot",
+         resampling_time_range=(10.0, 10.0),
+-        rel_standing_envs=0.02,
++        rel_standing_envs=0.15,
+         rel_heading_envs=1.0,
+         heading_command=False,
+         debug_vis=True,
+@@ -279,10 +279,33 @@ class RewardsCfg:
+         weight=-20.0,
+         params={
+             "target_pos_b": (0.0, 0.0, 0.192284379),
+-            "axis_weights": (1.0, 0.25, 1.0),
++            "axis_weights": (4.0, 0.5, 1.0),
+             "asset_cfg": SceneEntityCfg("robot", body_names="torso_link"),
+         },
+     )
++    torso_com_deviation_stand = RewTerm(
++        func=mdp.body_com_deviation_l2,
++        weight=-30.0,
++        params={
++            "target_pos_b": (0.0, 0.0, 0.192284379),
++            "axis_weights": (6.0, 1.0, 1.0),
++            "asset_cfg": SceneEntityCfg("robot", body_names="torso_link"),
++            "command_name": "base_velocity",
++            "cmd_threshold": 0.1,
++            "gate_when_standing": True,
++        },
++    )
++    torso_com_rel_vel_stand = RewTerm(
++        func=mdp.body_com_rel_vel_l2,
++        weight=-4.0,
++        params={
++            "axis_weights": (1.5, 1.5, 0.25),
++            "asset_cfg": SceneEntityCfg("robot", body_names="torso_link"),
++            "command_name": "base_velocity",
++            "cmd_threshold": 0.1,
++            "gate_when_standing": True,
++        },
++    )
+     torso_orientation_deviation = RewTerm(
+         func=mdp.body_upright_orientation_l2,
+         weight=-2.0,
+diff --git a/source/G1_w_FTP_RL/G1_w_FTP_RL/tasks/manager_based/g1_w_ftp_rl/mdp/rewards.py b/source/G1_w_FTP_RL/G1_w_FTP_RL/tasks/manager_based/g1_w_ftp_rl/mdp/rewards.py
+index 1528210..53b5518 100644
+--- a/source/G1_w_FTP_RL/G1_w_FTP_RL/tasks/manager_based/g1_w_ftp_rl/mdp/rewards.py
++++ b/source/G1_w_FTP_RL/G1_w_FTP_RL/tasks/manager_based/g1_w_ftp_rl/mdp/rewards.py
+@@ -71,6 +71,10 @@ def body_com_deviation_l2(
+     asset_cfg: SceneEntityCfg,
+     axis_weights: tuple[float, float, float] = (1.0, 1.0, 1.0),
+     yaw_frame: bool = True,
++    command_name: str | None = None,
++    cmd_threshold: float = 0.1,
++    gate_when_standing: bool = False,
++    gate_when_moving: bool = False,
+ ) -> torch.Tensor:
+     """Penalize body CoM position deviation from a target offset relative to the root."""
+     asset: Articulation = env.scene[asset_cfg.name]
+@@ -85,7 +89,49 @@ def body_com_deviation_l2(
+ 
+     target = torch.tensor(target_pos_b, dtype=rel_pos.dtype, device=rel_pos.device).view(1, 1, 3)
+     weights = torch.tensor(axis_weights, dtype=rel_pos.dtype, device=rel_pos.device).view(1, 1, 3)
+-    return torch.sum(weights * torch.square(rel_pos - target), dim=(1, 2))
++    reward = torch.sum(weights * torch.square(rel_pos - target), dim=(1, 2))
++
++    if command_name is not None and (gate_when_standing or gate_when_moving):
++        cmd_norm = torch.norm(env.command_manager.get_command(command_name)[:, :2], dim=1)
++        if gate_when_standing:
++            reward = reward * (cmd_norm < cmd_threshold)
++        if gate_when_moving:
++            reward = reward * (cmd_norm >= cmd_threshold)
++    return reward
++
++
++def body_com_rel_vel_l2(
++    env: ManagerBasedRLEnv,
++    asset_cfg: SceneEntityCfg,
++    axis_weights: tuple[float, float, float] = (1.0, 1.0, 1.0),
++    yaw_frame: bool = True,
++    relative_to_root: bool = True,
++    command_name: str | None = None,
++    cmd_threshold: float = 0.1,
++    gate_when_standing: bool = False,
++    gate_when_moving: bool = False,
++) -> torch.Tensor:
++    """Penalize selected body linear velocity, optionally relative to the root and gated by command magnitude."""
++    asset: Articulation = env.scene[asset_cfg.name]
++    body_vel_w = asset.data.body_lin_vel_w[:, asset_cfg.body_ids, :]
++    if relative_to_root:
++        body_vel_w = body_vel_w - asset.data.root_lin_vel_w[:, None, :]
++
++    if yaw_frame:
++        num_bodies = body_vel_w.shape[1]
++        root_yaw_quat = yaw_quat(asset.data.root_quat_w).repeat_interleave(num_bodies, dim=0)
++        body_vel_w = quat_apply_inverse(root_yaw_quat, body_vel_w.reshape(-1, 3)).reshape(env.num_envs, num_bodies, 3)
++
++    weights = torch.tensor(axis_weights, dtype=body_vel_w.dtype, device=body_vel_w.device).view(1, 1, 3)
++    reward = torch.sum(weights * torch.square(body_vel_w), dim=(1, 2))
++
++    if command_name is not None and (gate_when_standing or gate_when_moving):
++        cmd_norm = torch.norm(env.command_manager.get_command(command_name)[:, :2], dim=1)
++        if gate_when_standing:
++            reward = reward * (cmd_norm < cmd_threshold)
++        if gate_when_moving:
++            reward = reward * (cmd_norm >= cmd_threshold)
++    return reward
+ 
+ 
+ def body_upright_orientation_l2(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg) -> torch.Tensor:

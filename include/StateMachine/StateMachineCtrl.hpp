@@ -14,6 +14,7 @@ enum StateList {
     PASSIVE = 0,
     FSM_JPosCtrl = 1,
     FSM_ROM15DOF,
+    FSM_ROM2FULL,
     NUM_STATE
 };
 

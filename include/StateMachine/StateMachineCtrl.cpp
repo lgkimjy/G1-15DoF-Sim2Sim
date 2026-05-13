@@ -2,6 +2,7 @@
 
 #include "StateMachine/FSM_JPosCtrl.hpp"
 #include "StateMachine/FSM_ROM15DOF.hpp"
+#include "StateMachine/FSM_ROM2FullOrder.hpp"
 
 #include <iostream>
 
@@ -10,6 +11,7 @@ StateMachineCtrl::StateMachineCtrl(RobotData& robot)
     state_list_.resize(StateList::NUM_STATE, nullptr);
     state_list_[StateList::FSM_JPosCtrl] = new FSM_JPosCtrlState<double>(robot);
     state_list_[StateList::FSM_ROM15DOF] = new FSM_ROM15DOFState<double>(robot);
+    state_list_[StateList::FSM_ROM2FULL] = new FSM_ROM2FullOrderState<double>(robot);
 
     current_state_ = nullptr;
     next_state_ = nullptr;

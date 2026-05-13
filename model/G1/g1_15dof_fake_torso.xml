@@ -3,7 +3,7 @@
 
   <statistic meansize="0.144785" extent="1.23314" center="0.025392 2.0634e-05 -0.245975"/>
   <default>
-    <joint damping="0.001" armature="0.01" frictionloss="0.1"/>
+    <joint armature="0.03"/>
   </default>
 
   <asset>
@@ -114,9 +114,9 @@
       </body>
 
       <body name="torso_cylinder_link" pos="0 0 0">
-        <joint name="torso_roll_joint" axis="1 0 0" limited="false"/>
-        <joint name="torso_pitch_joint" axis="0 1 0" limited="false"/>
-        <joint name="torso_yaw_joint" axis="0 0 1" limited="false"/>
+        <joint name="torso_roll_joint" axis="1 0 0" limited="false" armature="0.001"/>
+        <joint name="torso_pitch_joint" axis="0 1 0" limited="false" armature="0.001"/>
+        <joint name="torso_yaw_joint" axis="0 0 1" limited="false" armature="0.001"/>
         <!-- <joint name="torso_tx_joint" type="slide" axis="1 0 0" limited="false"/>
         <joint name="torso_ty_joint" type="slide" axis="0 1 0" limited="false"/>
         <joint name="torso_tz_joint" type="slide" axis="0 0 1" limited="false"/> -->

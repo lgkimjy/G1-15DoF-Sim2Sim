@@ -1,5 +1,5 @@
 policy:
-  path: "../onnx/2026-04-10_00-36-11_rsl_rl/exported/policy.onnx"
+  path: "../onnx/2026-05-12_10-42-26_rsl_rl_upright_torso/exported/policy.onnx"
   input_name: "obs"
   output_name: "actions"
   action_scale: 0.25

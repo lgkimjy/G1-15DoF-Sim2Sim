@@ -1,0 +1,40 @@
+notes:
+  description: this fsm is to try inference 15DoF (reduced-order model) and transcibe to 29DoF (full-order model),
+    We have two strategy for this 15DoF: 
+      1. directly uses waist joints for observation, apply action directly
+      2. computes torso upper-body CoM, and apply upper-body IK. 
+
+policy:
+  path: "../onnx/2026-04-10_00-36-11_rsl_rl/exported/policy.onnx"
+  input_name: "obs"
+  output_name: "actions"
+  action_scale: 0.25
+  action_clip: 1000.0
+  obs_base_ang_vel_scale: 0.2
+  obs_joint_vel_scale: 0.05
+  policy_decimation: 20
+  history_length: 5
+  policy_to_robot: [0, 6, 12, 1, 7, 13, 2, 8, 14, 3, 9, 4, 10, 5, 11]
+
+Kp: [ 
+  100, 100, 100, 200, 20, 20, # roll, pitch, yaw, knee, ankle pitch, roll
+  100, 100, 100, 200, 20, 20,
+  5000, 5000, 5000,
+]
+Kd: [ 
+  2.5, 2.5, 2.5, 5, 0.2, 0.1, 
+  2.5, 2.5, 2.5, 5, 0.2, 0.1,
+  5, 5, 5,
+]
+
+tau_limit: [
+  88, 139, 88, 139, 50, 50,
+  88, 139, 88, 139, 50, 50,
+  8800, 8800, 8800,
+]
+
+default_jpos : [
+  -0.1, 0.0, 0.0, 0.3, -0.2, 0.0, # left leg
+  -0.1, 0.0, 0.0, 0.3, -0.2, 0.0, # right leg
+  0.0, 0.0, 0.0                   # waist joint = orientation of torso
+]
