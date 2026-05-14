@@ -1,40 +1,75 @@
 notes:
-  description: this fsm is to try inference 15DoF (reduced-order model) and transcibe to 29DoF (full-order model),
-    We have two strategy for this 15DoF: 
-      1. directly uses waist joints for observation, apply action directly
-      2. computes torso upper-body CoM, and apply upper-body IK. 
+  description: >
+    Run the 15DoF reduced-order policy on the 29DoF full-body model. Leg actions
+    are applied directly to the full-body leg joints; torso roll/pitch/yaw
+    actions drive a reduced reference model whose torso CoM/orientation is
+    tracked by full-body upper-body IK.
 
 policy:
-  path: "../onnx/2026-04-10_00-36-11_rsl_rl/exported/policy.onnx"
+  path: "../onnx/2026-05-12_10-42-26_rsl_rl_upright_torso/exported/policy.onnx"
   input_name: "obs"
   output_name: "actions"
   action_scale: 0.25
-  action_clip: 1000.0
+  action_clip: 10000.0
   obs_base_ang_vel_scale: 0.2
   obs_joint_vel_scale: 0.05
   policy_decimation: 20
   history_length: 5
+  debug_print_every: 0
   policy_to_robot: [0, 6, 12, 1, 7, 13, 2, 8, 14, 3, 9, 4, 10, 5, 11]
 
-Kp: [ 
-  100, 100, 100, 200, 20, 20, # roll, pitch, yaw, knee, ankle pitch, roll
-  100, 100, 100, 200, 20, 20,
-  5000, 5000, 5000,
+virtual_torso:
+  orientation_scale: 1.0
+  reference_base_yaw_only: true
+
+upper_body_ik:
+  enabled: true
+  com_gain: 5.0
+  orientation_gain: 0.1
+  posture_gain: .1
+  damping: 1.0e-4
+  max_delta_norm: 0.010
+  min_base_height: 0.70
+  full_base_height: 0.78
+  safe_tilt: 0.25
+  max_tilt: 0.65
+  raw_action_soft_limit: 0.0
+  raw_action_hard_limit: 10000000.0
+
+command:
+  vx: 0.0
+  vy: 0.0
+  wz: 0.0
+
+Kp: [
+  100.0, 100.0, 100.0, 200.0, 20.0, 20.0,
+  100.0, 100.0, 100.0, 200.0, 20.0, 20.0,
+  40.0, 40.0, 100.0,
+  80.0, 80.0, 60.0, 40.0, 30.0, 20.0, 20.0,
+  80.0, 80.0, 60.0, 40.0, 30.0, 20.0, 20.0
 ]
-Kd: [ 
-  2.5, 2.5, 2.5, 5, 0.2, 0.1, 
-  2.5, 2.5, 2.5, 5, 0.2, 0.1,
-  5, 5, 5,
+
+Kd: [
+  2.5, 2.5, 2.5, 5.0, 0.2, 0.1,
+  2.5, 2.5, 2.5, 5.0, 0.2, 0.1,
+  5.0, 5.0, 12.0,
+  3.0, 3.0, 2.5, 2.0, 1.5, 1.0, 1.0,
+  3.0, 3.0, 2.5, 2.0, 1.5, 1.0, 1.0
 ]
 
 tau_limit: [
-  88, 139, 88, 139, 50, 50,
-  88, 139, 88, 139, 50, 50,
-  8800, 8800, 8800,
+  88.0, 88.0, 88.0, 139.0, 50.0, 50.0,
+  88.0, 88.0, 88.0, 139.0, 50.0, 50.0,
+  88.0, 50.0, 50.0,
+  125.0, 125.0, 125.0, 125.0, 125.0, 105.0, 105.0,
+  125.0, 125.0, 125.0, 125.0, 125.0, 105.0, 105.0
 ]
 
-default_jpos : [
-  -0.1, 0.0, 0.0, 0.3, -0.2, 0.0, # left leg
-  -0.1, 0.0, 0.0, 0.3, -0.2, 0.0, # right leg
-  0.0, 0.0, 0.0                   # waist joint = orientation of torso
+# Joint order follows g1_full_order::joint_names / g1_29dof_rev_1_0.xml actuator order.
+default_jpos: [
+  -0.1, 0.0, 0.0, 0.3, -0.2, 0.0,
+  -0.1, 0.0, 0.0, 0.3, -0.2, 0.0,
+  0.0, 0.0, 0.0,
+  0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0,
+  0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0
 ]

@@ -368,7 +368,7 @@ class Simulate {
     {mjITEM_BUTTON,     "Clear all",       2, nullptr, "C#259"},
     {mjITEM_SEPARATOR,  "Desired Cmd",     1},
     {mjITEM_SLIDERNUM,  "lin_vel_d,x",     1, &this->lin_vel_d[0], "-1.0 1.0"},
-    {mjITEM_SLIDERNUM,  "lin_vel_d,y",     1, &this->lin_vel_d[1], "-0.3 0.3"},
+    {mjITEM_SLIDERNUM,  "lin_vel_d,y",     1, &this->lin_vel_d[1], "-0.8 0.8"},
     {mjITEM_SLIDERNUM,  "lin_vel_d,z",     1, &this->lin_vel_d[2], "-0.5 0.5"},
     {mjITEM_SLIDERNUM,  "ang_vel_d,r",     2, &this->ang_vel_d[0], "-0.3 0.3"},
     {mjITEM_SLIDERNUM,  "ang_vel_d,p",     2, &this->ang_vel_d[1], "-0.3 0.3"},

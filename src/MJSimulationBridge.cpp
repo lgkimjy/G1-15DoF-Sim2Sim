@@ -6,6 +6,7 @@
 #include <iomanip>
 #include <iostream>
 #include <sstream>
+#include <vector>
 
 SimulationBridge::SimulationBridge(const std::string& scene_file)
     : SimulationInterface(scene_file),
@@ -27,6 +28,14 @@ SimulationBridge::SimulationBridge(const std::string& scene_file)
 void SimulationBridge::Initialize()
 {
     state_machine_.setVisualizer(&mjSim_->traj_viz_util_);
+    upper_body_com_root_id_ = mj_name2id(mjModel_, mjOBJ_BODY, "waist_yaw_link");
+    if (upper_body_com_root_id_ < 0) {
+        std::cerr << "[SimulationBridge] waist_yaw_link body not found; upper-body CoM IK disabled." << std::endl;
+    }
+    upper_body_orientation_body_id_ = mj_name2id(mjModel_, mjOBJ_BODY, "torso_link");
+    if (upper_body_orientation_body_id_ < 0) {
+        std::cerr << "[SimulationBridge] torso_link body not found; torso orientation IK disabled." << std::endl;
+    }
     state_machine_.initialize();
     std::cout << "[SimulationBridge] Initialized" << std::endl;
 }
@@ -77,6 +86,51 @@ void SimulationBridge::UpdateSystemObserver()
     robot_.fbk.qvel.segment<3>(0) = robot_.fbk.pdot_B;
     robot_.fbk.qvel.segment<3>(3) = robot_.fbk.omega_B; // or varphi_B
     robot_.fbk.qvel.tail(num_act_joint) = robot_.fbk.jvel;
+
+    robot_.fbk.upper_body_com_valid = false;
+    robot_.fbk.upper_body_ori_valid = false;
+    robot_.fbk.upper_body_com_jac.setZero();
+    robot_.fbk.upper_body_ori_jac.setZero();
+    robot_.fbk.upper_body_com_vel.setZero();
+
+    if (upper_body_com_root_id_ >= 0) {
+        robot_.fbk.upper_body_com =
+            Eigen::Map<const Eigen::Vector3d>(mjData_->subtree_com + 3 * upper_body_com_root_id_);
+
+        std::vector<mjtNum> jacp(3 * mjModel_->nv, 0.0);
+        mj_jacSubtreeCom(mjModel_, mjData_, jacp.data(), upper_body_com_root_id_);
+        for (int i = 0; i < num_act_joint; ++i) {
+            const int v = i + 6;
+            for (int axis = 0; axis < 3; ++axis) {
+                robot_.fbk.upper_body_com_jac(axis, i) =
+                    static_cast<double>(jacp[axis * mjModel_->nv + v]);
+            }
+        }
+        robot_.fbk.upper_body_com_vel = robot_.fbk.upper_body_com_jac * robot_.fbk.jvel;
+        robot_.fbk.upper_body_com_valid = true;
+    }
+
+    if (upper_body_orientation_body_id_ >= 0) {
+        const mjtNum* xquat = mjData_->xquat + 4 * upper_body_orientation_body_id_;
+        robot_.fbk.upper_body_quat.w() = xquat[0];
+        robot_.fbk.upper_body_quat.x() = xquat[1];
+        robot_.fbk.upper_body_quat.y() = xquat[2];
+        robot_.fbk.upper_body_quat.z() = xquat[3];
+        if (robot_.fbk.upper_body_quat.norm() > 1e-9) {
+            robot_.fbk.upper_body_quat.normalize();
+        }
+
+        std::vector<mjtNum> jacr(3 * mjModel_->nv, 0.0);
+        mj_jacBody(mjModel_, mjData_, nullptr, jacr.data(), upper_body_orientation_body_id_);
+        for (int i = 0; i < num_act_joint; ++i) {
+            const int v = i + 6;
+            for (int axis = 0; axis < 3; ++axis) {
+                robot_.fbk.upper_body_ori_jac(axis, i) =
+                    static_cast<double>(jacr[axis * mjModel_->nv + v]);
+            }
+        }
+        robot_.fbk.upper_body_ori_valid = true;
+    }
 }
 
 void SimulationBridge::UpdateUserInput()
@@ -93,12 +147,9 @@ void SimulationBridge::UpdateControlCommand()
 {
     state_machine_.runState();
 
-    // for (int i = 0; i < num_act_joint; ++i) {
-    //     const double tau_limit = std::max(0.0, robot_.param.tau_limit(i));
-    //     mjData_->ctrl[i] = std::clamp(robot_.ctrl.torq_d(i), -tau_limit, tau_limit);
-    // }
-    for (int i = 0; i < num_act_joint; ++i) {
-        mjData_->ctrl[i] = robot_.ctrl.torq_d(i);
+    for (int i = 0; i < std::min<int>(num_act_joint, mjModel_->nu); ++i) {
+        const double tau_limit = std::max(0.0, robot_.param.tau_limit(i));
+        mjData_->ctrl[i] = std::clamp(robot_.ctrl.torq_d(i), -tau_limit, tau_limit);
     }
 }
 
@@ -109,7 +160,7 @@ void SimulationBridge::UpdateSystemVisualInfo()
 
 void SimulationBridge::LogStates()
 {
-    // if (logger && mjData_) {
-    //     logger->log(mjData_->time, robot_);
-    // }
+    if (logger && mjData_) {
+        logger->log(mjData_->time, robot_);
+    }
 }

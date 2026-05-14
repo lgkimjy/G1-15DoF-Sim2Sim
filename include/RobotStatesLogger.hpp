@@ -72,6 +72,7 @@ private:
     hid_t file_ = -1;
     std::unordered_map<std::string, Dataset> datasets_;
     std::unordered_map<std::string, std::vector<std::vector<double>>> buffers_;
+    bool file_flush_pending_ = false;
     static constexpr size_t CHUNK_SIZE = 50;
 
     void writerLoop()
@@ -94,6 +95,7 @@ private:
             lock.unlock();
 
             bufferData(entry);
+            flushPendingFileWrites();
         }
 
         flushAllBuffers();
@@ -187,8 +189,17 @@ private:
         H5Sclose(mem_space);
         H5Sclose(file_space);
 
+        file_flush_pending_ = true;
         dataset.offset += num_rows;
         buffer.clear();
+    }
+
+    void flushPendingFileWrites()
+    {
+        if (file_ >= 0 && file_flush_pending_) {
+            H5Fflush(file_, H5F_SCOPE_GLOBAL);
+            file_flush_pending_ = false;
+        }
     }
 
     Dataset& getOrCreateDataset(const std::string& name, size_t dim)

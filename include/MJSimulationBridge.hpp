@@ -33,6 +33,8 @@ protected:
 
     RobotData robot_;
     StateMachineCtrl state_machine_;
+    int upper_body_com_root_id_ = -1;
+    int upper_body_orientation_body_id_ = -1;
 };
 
 #endif

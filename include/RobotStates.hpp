@@ -29,17 +29,30 @@ struct RobotFeedback {
     Eigen::VectorXd     jpos;
     Eigen::VectorXd     jvel;
 
+    // Full-body upper-body quantities used by ROM-to-full IK.
+    Eigen::Vector3d     upper_body_com = Eigen::Vector3d::Zero();
+    Eigen::Vector3d     upper_body_com_vel = Eigen::Vector3d::Zero();
+    Eigen::MatrixXd     upper_body_com_jac;
+    Eigen::Quaterniond  upper_body_quat = Eigen::Quaterniond::Identity();
+    Eigen::MatrixXd     upper_body_ori_jac;
+    bool                upper_body_com_valid = false;
+    bool                upper_body_ori_valid = false;
+
     explicit RobotFeedback(int nv = g1::nDoF)
         : qpos(Eigen::VectorXd::Zero(nv + 1)),
           qvel(Eigen::VectorXd::Zero(nv)),
           jpos(Eigen::VectorXd::Zero(g1::num_act_joint)),
-          jvel(Eigen::VectorXd::Zero(g1::num_act_joint)) {}
+          jvel(Eigen::VectorXd::Zero(g1::num_act_joint)),
+          upper_body_com_jac(Eigen::MatrixXd::Zero(3, g1::num_act_joint)),
+          upper_body_ori_jac(Eigen::MatrixXd::Zero(3, g1::num_act_joint)) {}
 };
 
 // --- Commands & actuator outputs: motion targets + torque (not "motor struct" only) ---
 struct RobotCtrl {
     Eigen::Vector3d lin_vel_d = Eigen::Vector3d::Zero(); // desired linear velocity w.r.t. base frame
     Eigen::Vector3d ang_vel_d = Eigen::Vector3d::Zero(); // desired angular velocity w.r.t. base frame
+    Eigen::Vector3d upper_body_com_ref = Eigen::Vector3d::Zero();
+    Eigen::Quaterniond upper_body_quat_ref = Eigen::Quaterniond::Identity();
 
     Eigen::VectorXd jpos_d;
     Eigen::VectorXd jvel_d;
